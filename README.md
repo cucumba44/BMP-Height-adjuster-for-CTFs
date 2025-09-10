@@ -45,4 +45,67 @@ You can also specify an optional `bump` value to add extra height, just in case.
 # Adds an extra 100 pixels to the calculated height
 python fix_bmp.py corrupted.bmp recovered.bmp --bump 100
 ```
+---
 
+## The Code
+
+```python
+import argparse
+
+def fix_bmp_height(file_path, output_path, bump=50):
+    """
+    Recalculates BMP height based on pixel data size and patches the header.
+    """
+    try:
+        with open(file_path, "rb") as f:
+            bmp = bytearray(f.read())
+    except FileNotFoundError:
+        print(f"Error: File not found at {file_path}")
+        return
+
+    # Read width (4 bytes at offset 18) and height (4 bytes at offset 22)
+    width = int.from_bytes(bmp[18:22], "little", signed=True)
+    height = int.from_bytes(bmp[22:26], "little", signed=True)
+
+    # Bits per pixel (2 bytes at offset 28)
+    bpp = int.from_bytes(bmp[28:30], "little")
+
+    # Pixel array offset (4 bytes at offset 10)
+    pixel_offset = int.from_bytes(bmp[10:14], "little")
+
+    # Pixel data size = total file size - header offset
+    pixel_data_size = len(bmp) - pixel_offset
+
+    # Row size (each row padded to multiple of 4 bytes)
+    row_size = ((width * bpp + 31) // 32) * 4
+    
+    if row_size == 0:
+        print("Error: Calculated row size is zero. Check BMP width and bpp.")
+        return
+
+    # Calculate the real height
+    real_height = pixel_data_size // row_size
+    new_height = real_height + bump  # Make it a bit bigger
+
+    print(f"File: {file_path}")
+    print(f"Old height in header: {height}")
+    print(f"Calculated real height: {real_height}")
+    print(f"New (bumped) height: {new_height}")
+
+    # Write new height back to header
+    bmp[22:26] = new_height.to_bytes(4, "little", signed=True)
+
+    # Save modified BMP
+    with open(output_path, "wb") as f:
+        f.write(bmp)
+
+    print(f"Success! Saved BMP with corrected height to {output_path}")
+
+if __name__ == "__main__":
+    parser = argparse.ArgumentParser(description="Fixes BMP file height for CTF challenges.")
+    parser.add_argument("file_path", help="The path to the corrupted BMP file.")
+    parser.add_argument("output_path", help="The path to save the fixed BMP file.")
+    parser.add_argument("--bump", type=int, default=50, help="An optional value to add to the calculated height.")
+    args = parser.parse_args()
+    fix_bmp_height(args.file_path, args.output_path, args.bump)
+```
