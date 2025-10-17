@@ -1,6 +1,6 @@
 # BMP-Height-adjuster-for-CTFs
 Adjusts height of bmp images so you can see what's hidden in them
-# BMP Height Patcher 🕵️‍
+# BMP Height Patcher 
 
 A simple Python script to fix BMP image files with incorrect height values. This is a common technique used in CTF (Capture The Flag) steganography challenges to hide data or flags at the bottom of an image.
 
